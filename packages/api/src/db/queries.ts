@@ -304,6 +304,15 @@ export async function detachTagFromTodo(
   const todo = await db.select().from(todos).where(eq(todos.id, todoId)).get();
   if (!todo) return null;
 
+  // Verify the association exists before deleting
+  const association = await db
+    .select()
+    .from(todo_tags)
+    .where(and(eq(todo_tags.todo_id, todoId), eq(todo_tags.tag_id, tagId)))
+    .get();
+
+  if (!association) return null;
+
   await db
     .delete(todo_tags)
     .where(and(eq(todo_tags.todo_id, todoId), eq(todo_tags.tag_id, tagId)));

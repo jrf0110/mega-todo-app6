@@ -3,7 +3,7 @@ import { zValidator } from "@hono/zod-validator";
 import { z } from "zod";
 import type { Env } from "../index";
 import { createDb } from "../db/index";
-import { getTags, getTagById, createTag, deleteTag } from "../db/queries";
+import { getTags, createTag, deleteTag } from "../db/queries";
 
 const createTagSchema = z.object({
   name: z.string().min(1).max(50),
@@ -35,11 +35,10 @@ tagsRouter.delete("/:id", async (c) => {
   const id = c.req.param("id");
   const db = createDb(c.env.DB);
 
-  const existing = await getTagById(db, id);
-  if (!existing) {
+  const deleted = await deleteTag(db, id);
+  if (!deleted) {
     return c.json({ data: null, error: "Tag not found." }, 404);
   }
 
-  await deleteTag(db, id);
   return new Response(null, { status: 204 });
 });
