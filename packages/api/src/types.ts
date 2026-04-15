@@ -6,8 +6,7 @@ export interface Todo {
   id: string;
   title: string;
   description: string | null;
-  /** 0 = false, 1 = true (SQLite integer boolean) */
-  completed: number;
+  completed: boolean;
   priority: "low" | "medium" | "high";
   due_date: string | null;
   created_at: string;

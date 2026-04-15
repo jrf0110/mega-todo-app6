@@ -20,3 +20,10 @@ CREATE TABLE IF NOT EXISTS todo_tags (
   tag_id TEXT NOT NULL REFERENCES tags(id) ON DELETE CASCADE,
   PRIMARY KEY (todo_id, tag_id)
 );
+
+CREATE TRIGGER IF NOT EXISTS todos_updated_at
+  AFTER UPDATE ON todos
+  FOR EACH ROW
+  BEGIN
+    UPDATE todos SET updated_at = datetime('now') WHERE id = OLD.id;
+  END;

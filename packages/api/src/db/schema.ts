@@ -7,7 +7,7 @@ export const todos = sqliteTable("todos", {
     .$defaultFn(() => crypto.randomUUID().replace(/-/g, "")),
   title: text("title").notNull(),
   description: text("description"),
-  completed: integer("completed").notNull().default(0),
+  completed: integer("completed", { mode: "boolean" }).notNull().default(false),
   priority: text("priority", { enum: ["low", "medium", "high"] })
     .notNull()
     .default("medium"),
