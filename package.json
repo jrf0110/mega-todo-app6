@@ -10,8 +10,8 @@
     "build": "npm run build -w packages/frontend && npm run build -w packages/api",
     "deploy": "npm run deploy -w packages/api && npm run deploy -w packages/frontend",
     "typecheck": "npm run typecheck -w packages/frontend && npm run typecheck -w packages/api",
-    "lint": "eslint packages --ext .ts,.tsx",
-    "lint:fix": "eslint packages --ext .ts,.tsx --fix",
+    "lint": "eslint \"packages/**/*.{ts,tsx}\"",
+    "lint:fix": "eslint \"packages/**/*.{ts,tsx}\" --fix",
     "format": "prettier --write \"packages/**/*.{ts,tsx,json,css,md}\"",
     "format:check": "prettier --check \"packages/**/*.{ts,tsx,json,css,md}\""
   },
