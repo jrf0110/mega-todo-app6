@@ -1,84 +1,69 @@
-import js from '@eslint/js';
-import tsPlugin from '@typescript-eslint/eslint-plugin';
-import tsParser from '@typescript-eslint/parser';
-import reactPlugin from 'eslint-plugin-react';
-import reactHooksPlugin from 'eslint-plugin-react-hooks';
-import globals from 'globals';
+import js from "@eslint/js";
+import tseslint from "typescript-eslint";
+import reactPlugin from "eslint-plugin-react";
+import reactHooks from "eslint-plugin-react-hooks";
+import reactRefresh from "eslint-plugin-react-refresh";
+import globals from "globals";
 
-/** @type {import('eslint').Linter.FlatConfig[]} */
-export default [
+export default tseslint.config(
+  // Ignore build outputs and generated files
   {
     ignores: [
-      '**/dist/**',
-      '**/.wrangler/**',
-      '**/node_modules/**',
-      '**/*.config.js',
+      "**/dist/**",
+      "**/.wrangler/**",
+      "**/node_modules/**",
+      "**/*.config.js",
     ],
   },
 
-  // Base JS rules for all files
-  {
-    ...js.configs.recommended,
-  },
+  // Base JS rules
+  js.configs.recommended,
 
-  // TypeScript rules for all TS/TSX files
+  // TypeScript rules for all TS files
+  ...tseslint.configs.recommended,
+
+  // React rules for frontend
   {
-    files: ['**/*.ts', '**/*.tsx'],
-    languageOptions: {
-      parser: tsParser,
-      parserOptions: {
-        ecmaVersion: 'latest',
-        sourceType: 'module',
-      },
-      globals: {
-        ...globals.es2022,
-      },
-    },
+    files: ["packages/frontend/src/**/*.{ts,tsx}"],
     plugins: {
-      '@typescript-eslint': tsPlugin,
+      react: reactPlugin,
+      "react-hooks": reactHooks,
+      "react-refresh": reactRefresh,
     },
-    rules: {
-      ...tsPlugin.configs.recommended.rules,
-      '@typescript-eslint/no-unused-vars': [
-        'error',
-        { argsIgnorePattern: '^_', varsIgnorePattern: '^_' },
-      ],
-      '@typescript-eslint/no-explicit-any': 'warn',
-    },
-  },
-
-  // React rules for frontend TSX files
-  {
-    files: ['packages/frontend/**/*.tsx', 'packages/frontend/**/*.ts'],
     languageOptions: {
       globals: {
         ...globals.browser,
       },
-    },
-    plugins: {
-      react: reactPlugin,
-      'react-hooks': reactHooksPlugin,
+      parserOptions: {
+        ecmaFeatures: {
+          jsx: true,
+        },
+      },
     },
     settings: {
       react: {
-        version: 'detect',
+        version: "detect",
       },
     },
     rules: {
       ...reactPlugin.configs.recommended.rules,
-      ...reactHooksPlugin.configs.recommended.rules,
-      'react/react-in-jsx-scope': 'off', // Not needed with React 17+ JSX transform
-      'react/prop-types': 'off', // TypeScript handles this
+      ...reactHooks.configs.recommended.rules,
+      "react-refresh/only-export-components": [
+        "warn",
+        { allowConstantExport: true },
+      ],
+      "react/react-in-jsx-scope": "off",
+      "react/prop-types": "off",
     },
   },
 
-  // Worker/Node rules for API files
+  // API / Workers specific rules
   {
-    files: ['packages/api/**/*.ts'],
+    files: ["packages/api/src/**/*.ts"],
     languageOptions: {
       globals: {
-        ...globals.es2022,
+        ...globals.node,
       },
     },
   },
-];
+);

@@ -14,6 +14,12 @@ A full-stack todo application built on Cloudflare infrastructure:
     api/        # Hono on Cloudflare Workers
   package.json  # root npm workspace
   tsconfig.json # root TypeScript config
+  eslint.config.mjs  # ESLint flat config
+  .prettierrc        # Prettier config
+  .github/
+    workflows/
+      ci.yml      # CI: typecheck, lint, build on every push/PR
+      deploy.yml  # CD: deploy to Cloudflare on push to main
 ```
 
 ## Prerequisites
@@ -91,39 +97,33 @@ Outputs:
 - `packages/frontend/dist/` — static assets for Cloudflare Pages
 - API is bundled by Wrangler at deploy time
 
+## Lint & Format
+
+```bash
+# Check for lint errors
+npm run lint
+
+# Auto-fix lint errors
+npm run lint:fix
+
+# Check formatting
+npm run format:check
+
+# Apply formatting
+npm run format
+```
+
 ## Deploy
 
 ### First-time setup
 
-1. **Create the D1 database** (if not done during local setup):
-
-   ```bash
-   wrangler d1 create mega-todo-db
-   ```
-
-   Update `packages/api/wrangler.toml` with the returned `database_id`.
-
-2. **Create the Cloudflare Pages project** (once):
-
-   ```bash
-   wrangler pages project create mega-todo-frontend
-   ```
-
-### Run migrations in production
-
-Apply the initial schema to the remote D1 database:
+Create the Cloudflare Pages project (once):
 
 ```bash
-wrangler d1 execute mega-todo-db --file packages/api/migrations/0001_init.sql
+wrangler pages project create mega-todo-frontend
 ```
 
-For subsequent migrations, add the migration file and run:
-
-```bash
-wrangler d1 execute mega-todo-db --file packages/api/migrations/<migration-file>.sql
-```
-
-### Deploy everything manually
+### Deploy everything
 
 ```bash
 npm run deploy
@@ -131,63 +131,57 @@ npm run deploy
 
 This runs `wrangler deploy` for the Workers API first, then `wrangler pages deploy` for the frontend.
 
-### Deploy via GitHub Actions (CI/CD)
+### Run migrations in production
 
-The repository ships with two GitHub Actions workflows:
+```bash
+wrangler d1 execute mega-todo-db --file packages/api/migrations/0001_init.sql
+```
 
-| Workflow | Trigger | Purpose |
-|---|---|---|
-| `.github/workflows/ci.yml` | Push / PR | Type check, lint, and build all packages |
-| `.github/workflows/deploy.yml` | Push to `main` | Deploy API then frontend to Cloudflare |
+## CI/CD (GitHub Actions)
 
-#### Required GitHub Secrets
+### Continuous Integration (`ci.yml`)
 
-Set these in **Settings → Secrets and variables → Actions** for your repository:
+Runs on every push and pull request:
+
+- **typecheck** — TypeScript type checks across all packages
+- **lint** — ESLint across all packages
+- **build** — Production build of all packages
+
+### Continuous Deployment (`deploy.yml`)
+
+Runs on push to `main`:
+
+1. **deploy-api** — deploys the Hono Workers API via `wrangler deploy`
+2. **deploy-frontend** — builds the frontend then deploys to Cloudflare Pages via `wrangler pages deploy` (depends on `deploy-api`)
+
+### Required GitHub Secrets
+
+Set these in your GitHub repository under **Settings → Secrets and variables → Actions**:
 
 | Secret | Description |
 |---|---|
-| `CLOUDFLARE_API_TOKEN` | A Cloudflare API token with Workers and Pages permissions |
-| `CLOUDFLARE_ACCOUNT_ID` | Your Cloudflare account ID (found in the dashboard URL or Overview page) |
+| `CLOUDFLARE_API_TOKEN` | Cloudflare API token with Workers and Pages deploy permissions |
+| `CLOUDFLARE_ACCOUNT_ID` | Your Cloudflare account ID (found in the dashboard URL) |
 
-To create a suitable API token, go to [Cloudflare Dashboard → My Profile → API Tokens](https://dash.cloudflare.com/profile/api-tokens) and use the **Edit Cloudflare Workers** template, then add **Cloudflare Pages: Edit** permission.
+To create an API token, go to [Cloudflare Dashboard → My Profile → API Tokens](https://dash.cloudflare.com/profile/api-tokens) and use the **Edit Cloudflare Workers** template (also add Pages permissions if needed).
 
 ## Environment Variables
 
 | Variable | Location | Description |
 |---|---|---|
 | `VITE_API_URL` | `packages/frontend/.env` | Base URL of the API (dev only — prod uses same-origin) |
-| `CLOUDFLARE_API_TOKEN` | GitHub secret / shell | Token for `wrangler deploy` in CI |
-| `CLOUDFLARE_ACCOUNT_ID` | GitHub secret / shell | Cloudflare account ID for `wrangler deploy` in CI |
-
-## Code Quality
-
-### Lint
-
-```bash
-npm run lint          # report lint errors
-npm run lint:fix      # auto-fix lint errors
-```
-
-### Format
-
-```bash
-npm run format        # write Prettier formatting
-npm run format:check  # check formatting without writing
-```
-
-### Type check
-
-```bash
-npm run typecheck
-```
+| `CLOUDFLARE_API_TOKEN` | GitHub Secret / local env | Cloudflare API token for deployments |
+| `CLOUDFLARE_ACCOUNT_ID` | GitHub Secret / local env | Cloudflare account ID for deployments |
 
 ## API Routes
 
 | Method | Path | Description |
 |---|---|---|
 | `GET` | `/api/health` | Health check |
-
-More routes are added in subsequent beads (todos CRUD, tags, etc.).
+| `GET` | `/api/todos` | List all todos |
+| `POST` | `/api/todos` | Create a todo |
+| `PUT` | `/api/todos/:id` | Update a todo |
+| `DELETE` | `/api/todos/:id` | Delete a todo |
 
 ## Stack
 
@@ -201,6 +195,6 @@ More routes are added in subsequent beads (todos CRUD, tags, etc.).
 | API runtime | Cloudflare Workers |
 | Database | Cloudflare D1 (SQLite) |
 | Language | TypeScript 5 |
-| Linter | ESLint 9 (flat config) |
-| Formatter | Prettier 3 |
+| Linting | ESLint 9 (flat config) |
+| Formatting | Prettier 3 |
 | CI/CD | GitHub Actions |
