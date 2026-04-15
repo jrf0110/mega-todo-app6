@@ -1,6 +1,9 @@
 import { Hono } from "hono";
-import { cors } from "hono/cors";
 import { logger } from "hono/logger";
+import { corsMiddleware } from "./middleware/cors";
+import { errorMiddleware } from "./middleware/error";
+import { todosRouter } from "./routes/todos";
+import { tagsRouter } from "./routes/tags";
 
 export type Env = {
   DB: D1Database;
@@ -8,34 +11,37 @@ export type Env = {
 
 const app = new Hono<{ Bindings: Env }>();
 
-// Middleware
+// ---------------------------------------------------------------------------
+// Global middleware
+// ---------------------------------------------------------------------------
+
 app.use("*", logger());
-app.use(
-  "*",
-  cors({
-    origin: ["http://localhost:5173", "https://mega-todo-frontend.pages.dev"],
-    allowMethods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"],
-    allowHeaders: ["Content-Type", "Authorization"],
-    exposeHeaders: ["Content-Length"],
-    maxAge: 600,
-    credentials: true,
-  })
-);
+app.use("*", corsMiddleware);
+app.use("*", errorMiddleware);
+
+// ---------------------------------------------------------------------------
+// Routes
+// ---------------------------------------------------------------------------
+
+app.route("/api/todos", todosRouter);
+app.route("/api/tags", tagsRouter);
 
 // Health check
 app.get("/api/health", (c) => {
-  return c.json({ status: "ok", timestamp: new Date().toISOString() });
+  return c.json({ data: { status: "ok", timestamp: new Date().toISOString() }, error: null });
 });
 
-// 404 handler
+// ---------------------------------------------------------------------------
+// Fallback handlers
+// ---------------------------------------------------------------------------
+
 app.notFound((c) => {
-  return c.json({ error: "Not found" }, 404);
+  return c.json({ data: null, error: "Not found." }, 404);
 });
 
-// Error handler
 app.onError((err, c) => {
   console.error("Unhandled error:", err);
-  return c.json({ error: "Internal server error" }, 500);
+  return c.json({ data: null, error: "Internal server error." }, 500);
 });
 
 export default app;
