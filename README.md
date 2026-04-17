@@ -121,6 +121,24 @@ wrangler d1 execute mega-todo-db --file packages/api/migrations/0001_init.sql
 |---|---|---|
 | `VITE_API_URL` | `packages/frontend/.env` | Base URL of the API (dev only — prod uses same-origin) |
 
+## CI/CD
+
+GitHub Actions workflows are located in `.github/workflows/`.
+
+### `ci.yml` — Continuous Integration
+Runs on every pull request and push to `main`:
+- Typechecks both packages (`tsc --noEmit`)
+- Builds both packages
+
+### `deploy.yml` — Deployment
+Runs on push to `main`:
+1. **deploy-api** — deploys the Hono Workers API via `wrangler deploy`
+2. **deploy-frontend** — builds the React app and deploys to Cloudflare Pages via `wrangler pages deploy dist`
+
+Required GitHub repository secrets:
+- `CLOUDFLARE_API_TOKEN` — Cloudflare API token with Workers and Pages deploy permissions
+- `CLOUDFLARE_ACCOUNT_ID` — your Cloudflare account ID
+
 ## API Routes
 
 | Method | Path | Description |
