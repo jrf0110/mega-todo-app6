@@ -1,0 +1,27 @@
+{
+  "name": "mega-todo",
+  "version": "1.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "scripts": {
+    "dev": "concurrently --kill-others \"npm run dev -w packages/frontend\" \"npm run dev -w packages/api\"",
+    "build": "npm run build -w packages/frontend && npm run build -w packages/api",
+    "deploy": "npm run deploy -w packages/api && npm run deploy -w packages/frontend",
+    "typecheck": "npm run typecheck -w packages/frontend && npm run typecheck -w packages/api",
+    "lint": "eslint .",
+    "format": "prettier --write ."
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.0.0",
+    "@typescript-eslint/eslint-plugin": "^8.0.0",
+    "@typescript-eslint/parser": "^8.0.0",
+    "concurrently": "^9.0.0",
+    "eslint": "^9.0.0",
+    "eslint-plugin-react": "^7.37.0",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "globals": "^15.0.0",
+    "prettier": "^3.3.0"
+  }
+}
