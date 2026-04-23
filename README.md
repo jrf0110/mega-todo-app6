@@ -14,6 +14,12 @@ A full-stack todo application built on Cloudflare infrastructure:
     api/        # Hono on Cloudflare Workers
   package.json  # root npm workspace
   tsconfig.json # root TypeScript config
+  eslint.config.mjs  # ESLint flat config
+  .prettierrc        # Prettier config
+  .github/
+    workflows/
+      ci.yml      # CI: typecheck, lint, build on every push/PR
+      deploy.yml  # CD: deploy to Cloudflare on push to main
 ```
 
 ## Prerequisites
@@ -91,6 +97,22 @@ Outputs:
 - `packages/frontend/dist/` — static assets for Cloudflare Pages
 - API is bundled by Wrangler at deploy time
 
+## Lint & Format
+
+```bash
+# Check for lint errors
+npm run lint
+
+# Auto-fix lint errors
+npm run lint:fix
+
+# Check formatting
+npm run format:check
+
+# Apply formatting
+npm run format
+```
+
 ## Deploy
 
 ### First-time setup
@@ -115,19 +137,51 @@ This runs `wrangler deploy` for the Workers API first, then `wrangler pages depl
 wrangler d1 execute mega-todo-db --file packages/api/migrations/0001_init.sql
 ```
 
+## CI/CD (GitHub Actions)
+
+### Continuous Integration (`ci.yml`)
+
+Runs on every push and pull request:
+
+- **typecheck** — TypeScript type checks across all packages
+- **lint** — ESLint across all packages
+- **build** — Production build of all packages
+
+### Continuous Deployment (`deploy.yml`)
+
+Runs on push to `main`:
+
+1. **deploy-api** — deploys the Hono Workers API via `wrangler deploy`
+2. **deploy-frontend** — builds the frontend then deploys to Cloudflare Pages via `wrangler pages deploy` (depends on `deploy-api`)
+
+### Required GitHub Secrets
+
+Set these in your GitHub repository under **Settings → Secrets and variables → Actions**:
+
+| Secret | Description |
+|---|---|
+| `CLOUDFLARE_API_TOKEN` | Cloudflare API token with Workers and Pages deploy permissions |
+| `CLOUDFLARE_ACCOUNT_ID` | Your Cloudflare account ID (found in the dashboard URL) |
+
+To create an API token, go to [Cloudflare Dashboard → My Profile → API Tokens](https://dash.cloudflare.com/profile/api-tokens) and use the **Edit Cloudflare Workers** template (also add Pages permissions if needed).
+
 ## Environment Variables
 
 | Variable | Location | Description |
 |---|---|---|
 | `VITE_API_URL` | `packages/frontend/.env` | Base URL of the API (dev only — prod uses same-origin) |
+| `CLOUDFLARE_API_TOKEN` | GitHub Secret / local env | Cloudflare API token for deployments |
+| `CLOUDFLARE_ACCOUNT_ID` | GitHub Secret / local env | Cloudflare account ID for deployments |
 
 ## API Routes
 
 | Method | Path | Description |
 |---|---|---|
 | `GET` | `/api/health` | Health check |
-
-More routes are added in subsequent beads (todos CRUD, tags, etc.).
+| `GET` | `/api/todos` | List all todos |
+| `POST` | `/api/todos` | Create a todo |
+| `PUT` | `/api/todos/:id` | Update a todo |
+| `DELETE` | `/api/todos/:id` | Delete a todo |
 
 ## Stack
 
@@ -141,3 +195,6 @@ More routes are added in subsequent beads (todos CRUD, tags, etc.).
 | API runtime | Cloudflare Workers |
 | Database | Cloudflare D1 (SQLite) |
 | Language | TypeScript 5 |
+| Linting | ESLint 9 (flat config) |
+| Formatting | Prettier 3 |
+| CI/CD | GitHub Actions |
